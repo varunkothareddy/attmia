@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attmia Honey - Order Status</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        // Initialize EmailJS with your Public Key
+        (function() { emailjs.init("xw4tl8i_3xZ-FObZ3"); })(); // Replace with your actual User ID if different
+    </script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fcf8e8; padding-top: 80px; }
+        
+        header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 70px;
+            background: #4b3832; display: flex; align-items: center;
+            justify-content: space-between; padding: 0 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1000;
+        }
+
+        /* Status Icon Styling */
+        #status-icon {
+            font-size: 4rem;
+            animation: pulse 2s infinite;
+        }
+
+        .text-success { color: #10b981; } /* Tailwind green-500 */
+        .text-pending { color: #f59e0b; } /* Tailwind amber-500 */
+        .text-failure { color: #ef4444; } /* Tailwind red-500 */
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            70% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    
+    <header>
+        <div class="text-3xl font-bold text-yellow-300">Honey</div>
+        <nav class="hidden md:flex space-x-4">
+            <a href="index.html" class="text-yellow-300 hover:text-white">Home</a>
+            <a href="shop.html" class="text-yellow-300 hover:text-white">Shop</a>
+        </nav>
+    </header>
+    
+    <main class="container mx-auto p-4 md:p-8">
+        <div class="max-w-xl mx-auto bg-white p-8 rounded-lg shadow-xl text-center">
+            
+            <div id="status-display">
+                <i id="status-icon" class="fas fa-spinner fa-spin text-gray-500"></i>
+                <h1 id="status-title" class="text-3xl font-bold mt-4 text-gray-800">Verifying Payment Status...</h1>
+                <p id="status-message" class="text-gray-600 mt-2">Please do not refresh or close this page.</p>
+            </div>
+
+            <div id="order-details" class="mt-6 text-left border-t pt-4 hidden">
+                <h3 class="text-xl font-semibold mb-2">Transaction Details</h3>
+                <p><strong>Transaction ID:</strong> <span id="txn-id"></span></p>
+                <p><strong>Amount Paid:</strong> <span id="amount-paid"></span></p>
+                <p><strong>Order Summary:</strong> <span id="order-summary"></span></p>
+                <p class="text-sm text-gray-500 mt-4">For any issues, please contact customer support with your Transaction ID.</p>
+            </div>
+            
+            <a id="continue-btn" href="index.html" class="mt-8 inline-block px-6 py-3 bg-4b3832 text-white font-semibold rounded-lg shadow hover:bg-5d463d transition duration-300 hidden" style="background-color: #4b3832;">
+                Continue Shopping
+            </a>
+            
+        </div>
+    </main>
+
+    <script>
+        // --- Configuration ---
+        const CHECK_STATUS_API = 'https://attmia.com/.netlify/functions/check-status';
+
+        // --- EmailJS Templates and Service IDs (from shop.html) ---
+        const SERVICE_ID = 'service_c74y3if';
+        const SELLER_TEMPLATE = 'template_p5hbtqf';
+        const CUSTOMER_TEMPLATE = 'template_kv1chwl';
+        
+        // Function to extract query parameters from URL
+        function getQueryParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Function to update the page display based on status
+        function updateDisplay(status, message, iconClass, iconColor) {
+            document.getElementById('status-icon').className = iconClass;
+            document.getElementById('status-icon').classList.add(iconColor);
+            document.getElementById('status-title').textContent = status;
+            document.getElementById('status-message').textContent = message;
+            document.getElementById('status-display').classList.add('animate-none');
+            document.getElementById('continue-btn').classList.remove('hidden');
+        }
+
+        // Function to display transaction details
+        function showTransactionDetails(txnId, amount, summary) {
+            document.getElementById('txn-id').textContent = txnId;
+            document.getElementById('amount-paid').textContent = amount;
+            document.getElementById('order-summary').textContent = summary || 'Details unavailable.';
+            document.getElementById('order-details').classList.remove('hidden');
+        }
+
+        /**
+         * Sends confirmation emails using EmailJS.
+         * NOTE: This assumes you have the full order details saved/available somewhere, 
+         * which is not the case here since we moved away from Local Storage in shop.html.
+         * For now, we will use mock data for the email, but you should ideally pass
+         * these details from the front-end to initiate-payment.js and store them temporarily.
+         */
+        async function sendOrderConfirmation(orderData) {
+            try {
+                const totalAmount = `₹${(orderData.amount / 100).toFixed(2)}`;
+                const subtotal = `₹${((orderData.amount - 10000) / 100).toFixed(2)}`; // Mock subtotal based on 100 INR shipping
+                const shipping = `₹100.00`;
+
+                const emailParams = {
+                    // Use actual data received from PhonePe or saved earlier
+                    customer_name: "Customer", // Placeholder - Needs fix
+                    customer_email: "test@example.com", // Placeholder - Needs fix
+                    mobile_number: "9999999999", // Placeholder - Needs fix
+                    shipping_address: "Address unavailable.", // Placeholder - Needs fix
+                    
+                    // Transaction specific details
+                    subtotal: subtotal,
+                    shipping_charge: shipping,
+                    total_amount: totalAmount,
+                    order_summary: "Honey (1) x 1", // Placeholder - Needs fix
+                    time: new Date().toLocaleString('en-IN')
+                };
+
+                // 1. Email to Seller
+                await emailjs.send(SERVICE_ID, SELLER_TEMPLATE, emailParams);
+                
+                // 2. Email to Customer
+                await emailjs.send(SERVICE_ID, CUSTOMER_TEMPLATE, emailParams);
+
+                console.log('Order confirmation emails sent successfully.');
+            } catch (error) {
+                console.error('Error sending emails:', error);
+                // The payment is confirmed, so don't fail the entire page, just log the email error
+            }
+        }
+        
+        /**
+         * Main function to check the payment status securely.
+         */
+        async function checkPaymentStatus() {
+            const orderId = getQueryParameter('orderId');
+
+            if (!orderId) {
+                updateDisplay(
+                    'Missing Order ID',
+                    'The transaction could not be verified. Please contact support.',
+                    'fas fa-exclamation-triangle',
+                    'text-failure'
+                );
+                return;
+            }
+
+            try {
+                // 1. Call the secure Netlify function
+                const response = await fetch(`${CHECK_STATUS_API}?orderId=${orderId}`);
+                const result = await response.json();
+
+                if (response.ok && result.status) {
+                    const status = result.status; // e.g., COMPLETED, PENDING, FAILED
+                    const data = result.data;
+                    
+                    showTransactionDetails(orderId, `₹${(data.amount / 100).toFixed(2)}`, 'Order details will appear here.');
+                    
+                    if (status === 'COMPLETED') {
+                        updateDisplay(
+                            'Payment Successful!',
+                            'Your order has been confirmed and placed. A confirmation email will be sent shortly.',
+                            'fas fa-check-circle',
+                            'text-success'
+                        );
+                        
+                        // 2. ONLY if payment is successful, complete the local process
+                        // Send emails and save to Local Storage (using the transaction data)
+                        await sendOrderConfirmation(data); 
+
+                        // This is where you would save the final, confirmed order to localStorage/database
+                        // NOTE: Saving to localStorage here requires retrieving the full customer/item data from somewhere.
+                        // Since that data was not passed to the backend, it is not available here.
+                        
+                    } else if (status === 'PENDING') {
+                        updateDisplay(
+                            'Payment Pending',
+                            'We are still waiting for confirmation from the bank. Please check back later or contact support.',
+                            'fas fa-clock',
+                            'text-pending'
+                        );
+                    } else { // FAILED or other status
+                        updateDisplay(
+                            'Payment Failed',
+                            'Your transaction could not be completed. Please try again or use a different method.',
+                            'fas fa-times-circle',
+                            'text-failure'
+                        );
+                    }
+
+                } else {
+                    updateDisplay(
+                        'Verification Error',
+                        result.message || 'Could not verify status with the payment gateway.',
+                        'fas fa-exclamation-circle',
+                        'text-failure'
+                    );
+                }
+
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                updateDisplay(
+                    'Network Error',
+                    'Could not connect to the server to check payment status.',
+                    'fas fa-plug',
+                    'text-failure'
+                );
+            }
+        }
+
+        // Start the check process when the page loads
+        window.onload = checkPaymentStatus;
+    </script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Attmia Natural Honey – Shop</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <!-- Razorpay -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <style>
+    body {
+      font-family: Inter, sans-serif;
+      background: #fcf8e8;
+      padding-top: 80px;
+    }
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 70px;
+      background: #4b3832;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      z-index: 1000;
+    }
+    .logo {
+      color: #f8d674;
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin: auto;
+    }
+    #menu-btn {
+      background: none;
+      border: none;
+      color: #f8d674;
+      font-size: 1.8rem;
+    }
+    #mobile-sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 260px;
+      height: 100vh;
+      background: #4b3832;
+      transform: translateX(100%);
+      transition: 0.3s;
+      z-index: 1001;
+      padding: 25px;
+    }
+    #mobile-sidebar.open {
+      transform: translateX(0);
+    }
+    #mobile-sidebar a {
+      display: block;
+      padding: 14px 0;
+      color: #f8d674;
+      text-decoration: none;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<header>
+  <button id="menu-btn"><i class="fas fa-bars"></i></button>
+  <div class="logo">Attmia Natural Honey</div>
+</header>
+
+<!-- MOBILE MENU -->
+<div id="mobile-sidebar">
+  <div class="text-right mb-6">
+    <button id="close-menu" class="text-4xl text-amber-300">×</button>
+  </div>
+  <a href="index.html">Home</a>
+  <a href="shop.html">Shop</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-6 mt-8">
+
+  <h1 class="text-3xl font-bold text-center text-amber-700 mb-8">Checkout</h1>
+
+  <!-- PRODUCT -->
+  <div class="flex items-center gap-6 bg-amber-50 p-5 rounded-xl">
+    <img src="https://i.pinimg.com/736x/9d/23/d8/9d23d846f64fe354774c800a0f1a585b.jpg"
+         class="w-28 h-28 rounded-xl"/>
+    <div class="flex-1">
+      <h2 class="text-xl font-bold">Natural Honey (1 Kg)</h2>
+      <p class="text-gray-600">100% Pure & Natural</p>
+      <p class="text-lg font-semibold text-amber-600">₹450</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="changeQty(-1)" class="px-3 py-2 bg-gray-200 rounded">-</button>
+      <input id="qty" type="number" value="1" min="1" max="5"
+             class="w-14 text-center border rounded"/>
+      <button onclick="changeQty(1)" class="px-3 py-2 bg-gray-200 rounded">+</button>
+    </div>
+  </div>
+
+  <!-- BILL SUMMARY -->
+  <div class="mt-8 bg-amber-50 p-6 rounded-xl border border-amber-300">
+    <div class="flex justify-between text-lg">
+      <span>Subtotal</span>
+      <span id="sub">₹450</span>
+    </div>
+    <div class="flex justify-between text-lg">
+      <span>Shipping</span>
+      <span>₹100</span>
+    </div>
+    <div class="flex justify-between text-xl font-bold border-t mt-3 pt-3">
+      <span>Total</span>
+      <span id="total">₹550</span>
+    </div>
+  </div>
+
+  <!-- CUSTOMER DETAILS -->
+  <form id="orderForm" class="mt-8 space-y-4">
+    <input required placeholder="Full Name"
+           class="w-full p-3 border rounded"/>
+    <input required type="email" placeholder="Email"
+           class="w-full p-3 border rounded"/>
+    <input required type="tel" pattern="[0-9]{10}"
+           placeholder="Mobile Number"
+           class="w-full p-3 border rounded"/>
+    <textarea required placeholder="Full Address with Pincode"
+              class="w-full p-3 border rounded"></textarea>
+
+    <button id="payBtn" type="submit"
+            class="w-full mt-4 bg-purple-700 hover:bg-purple-800 text-white text-xl font-bold py-4 rounded-xl">
+      Pay ₹550
+    </button>
+  </form>
+</div>
+
+<script>
+  const PRICE = 450;
+  const SHIPPING = 100;
+
+  const BACKEND_URL = "https://phonepe-render-backend.onrender.com";
+
+
+  const qtyEl = document.getElementById("qty");
+  const subEl = document.getElementById("sub");
+  const totalEl = document.getElementById("total");
+  const payBtn = document.getElementById("payBtn");
+
+  function recalc() {
+    const q = parseInt(qtyEl.value) || 1;
+    const sub = q * PRICE;
+    const total = sub + SHIPPING;
+    subEl.textContent = `₹${sub}`;
+    totalEl.textContent = `₹${total}`;
+    payBtn.textContent = `Pay ₹${total}`;
+    return total;
+  }
+
+  function changeQty(d) {
+    let v = parseInt(qtyEl.value) || 1;
+    v += d;
+    if (v < 1) v = 1;
+    if (v > 5) v = 5;
+    qtyEl.value = v;
+    recalc();
+  }
+
+  qtyEl.onchange = recalc;
+
+  document.getElementById("orderForm").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const amount = recalc();
+    payBtn.disabled = true;
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/create-order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount })
+      });
+
+      const order = await res.json();
+
+      const options = {
+        key: "rzp_test_RsI7Pn3lJSY5zD", // 🔁 replace with LIVE key later
+        amount: order.amount,
+        currency: "INR",
+        name: "ATTMIA NATURAL HONEY",
+        description: "Honey Purchase",
+        order_id: order.id,
+        handler: async function (response) {
+          const verifyRes = await fetch(`${BACKEND_URL}/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(response)
+          });
+
+          const verifyData = await verifyRes.json();
+
+          if (verifyData.success) {
+            alert("Payment successful!");
+            window.location.href = "orders.html";
+          } else {
+            alert("Payment verification failed");
+          }
+        }
+      };
+
+      new Razorpay(options).open();
+
+    } catch (err) {
+      alert("Payment failed");
+      console.error(err);
+    } finally {
+      payBtn.disabled = false;
+    }
+  };
+
+  document.getElementById("menu-btn").onclick = () =>
+    document.getElementById("mobile-sidebar").classList.add("open");
+
+  document.getElementById("close-menu").onclick = () =>
+    document.getElementById("mobile-sidebar").classList.remove("open");
+
+  recalc();
+</script>
+
+</body>
+</html>
+
+
