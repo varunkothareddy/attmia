@@ -64,6 +64,21 @@
       text-decoration: none;
       font-size: 1.2rem;
     }
+    <style>
+  .loader {
+    width: 60px;
+    height: 60px;
+    border: 6px solid #e5e7eb;
+    border-top: 6px solid #7c3aed;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
   </style>
 </head>
 
@@ -123,7 +138,14 @@
       <span id="total">₹550</span>
     </div>
   </div>
-
+<div id="paymentLoader" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+  <div class="bg-white p-8 rounded-2xl flex flex-col items-center gap-4">
+    <div class="loader"></div>
+    <p class="text-lg font-semibold text-gray-700">
+      Processing payment...
+    </p>
+  </div>
+</div>
   <!-- CUSTOMER DETAILS -->
   <form id="orderForm" class="mt-8 space-y-4">
     <input required placeholder="Full Name"
@@ -146,14 +168,13 @@
 <script>
   const PRICE = 450;
   const SHIPPING = 100;
-
   const BACKEND_URL = "https://phonepe-render-backend.onrender.com";
-
 
   const qtyEl = document.getElementById("qty");
   const subEl = document.getElementById("sub");
   const totalEl = document.getElementById("total");
   const payBtn = document.getElementById("payBtn");
+  const loader = document.getElementById("paymentLoader");
 
   function recalc() {
     const q = parseInt(qtyEl.value) || 1;
@@ -167,14 +188,10 @@
 
   function changeQty(d) {
     let v = parseInt(qtyEl.value) || 1;
-    v += d;
-    if (v < 1) v = 1;
-    if (v > 5) v = 5;
+    v = Math.min(5, Math.max(1, v + d));
     qtyEl.value = v;
     recalc();
   }
-
-  qtyEl.onchange = recalc;
 
   document.getElementById("orderForm").onsubmit = async (e) => {
     e.preventDefault();
@@ -182,60 +199,68 @@
     const amount = recalc();
     payBtn.disabled = true;
 
-    try {
-      const res = await fetch(`${BACKEND_URL}/create-order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount })
-      });
+    // 🔥 SHOW LOADER
+    loader.classList.remove("hidden");
+    loader.classList.add("flex");
 
-      const order = await res.json();
+    // ⏱️ WAIT 2 SECONDS
+    setTimeout(async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/create-order`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount })
+        });
 
-      const options = {
-        key: "rzp_test_RsI7Pn3lJSY5zD", // 🔁 replace with LIVE key later
-        amount: order.amount,
-        currency: "INR",
-        name: "ATTMIA NATURAL HONEY",
-        description: "Honey Purchase",
-        order_id: order.id,
-        handler: async function (response) {
-          const verifyRes = await fetch(`${BACKEND_URL}/verify`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(response)
-          });
+        const order = await res.json();
 
-          const verifyData = await verifyRes.json();
+        const options = {
+          key: "rzp_test_xxxxx", // live key later
+          amount: order.amount,
+          currency: "INR",
+          name: "ATTMIA NATURAL HONEY",
+          description: "Honey Purchase",
+          order_id: order.id,
 
-          if (verifyData.success) {
-            alert("Payment successful!");
+          handler: async function (response) {
+            loader.classList.add("hidden");
+
+            // save order locally
+            localStorage.setItem("lastOrder", JSON.stringify({
+              orderId: order.id,
+              paymentId: response.razorpay_payment_id,
+              amount: amount,
+              date: new Date().toLocaleString()
+            }));
+
             window.location.href = "orders.html";
-          } else {
-            alert("Payment verification failed");
+          },
+
+          modal: {
+            ondismiss: function () {
+              // ❌ Payment cancelled
+              loader.classList.add("hidden");
+              window.location.href = "shop.html";
+            }
           }
-        }
-      };
+        };
 
-      new Razorpay(options).open();
+        const rzp = new Razorpay(options);
+        rzp.open();
 
-    } catch (err) {
-      alert("Payment failed");
-      console.error(err);
-    } finally {
-      payBtn.disabled = false;
-    }
+      } catch (err) {
+        loader.classList.add("hidden");
+        alert("Payment failed. Please try again.");
+        window.location.href = "shop.html";
+      }
+    }, 2000);
   };
-
-  document.getElementById("menu-btn").onclick = () =>
-    document.getElementById("mobile-sidebar").classList.add("open");
-
-  document.getElementById("close-menu").onclick = () =>
-    document.getElementById("mobile-sidebar").classList.remove("open");
 
   recalc();
 </script>
 
 </body>
 </html>
+
 
 
