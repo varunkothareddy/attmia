@@ -19,7 +19,13 @@
 </div>
 
 <script>
-  const order = JSON.parse(localStorage.getItem("lastOrder"));
+ const order = JSON.parse(localStorage.getItem("lastOrder"));
+
+document.getElementById("orderId").innerText = order.order_id;
+document.getElementById("paymentId").innerText = order.payment_id;
+document.getElementById("amount").innerText = `₹${order.total_amount}`;
+document.getElementById("date").innerText = order.date;
+
 
   if (order) {
     document.getElementById("orderDetails").innerHTML = `
@@ -33,3 +39,4 @@
 
 </body>
 </html>
+
