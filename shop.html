@@ -8,6 +8,12 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+  (function () {
+    emailjs.init("YOUR_PUBLIC_KEY"); // 🔑 public key
+  })();
+</script>
 
   <!-- Razorpay -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -166,8 +172,8 @@
 </div>
 
 <script>
-  const PRICE = 450;
-  const SHIPPING = 100;
+  const PRICE = 0;
+  const SHIPPING = 1;
   const BACKEND_URL = "https://phonepe-render-backend.onrender.com";
 
   const qtyEl = document.getElementById("qty");
@@ -198,6 +204,63 @@
 
     const amount = recalc();
     payBtn.disabled = true;
+    handler: async function (response) {
+
+  loader.classList.add("hidden");
+
+  const form = document.getElementById("orderForm");
+  const name = form.querySelector('input[placeholder="Full Name"]').value;
+  const email = form.querySelector('input[type="email"]').value;
+  const phone = form.querySelector('input[type="tel"]').value;
+  const address = form.querySelector('textarea').value;
+  const qty = document.getElementById("qty").value;
+
+  const orderData = {
+    customer_name: name,
+    customer_email: email,
+    customer_phone: phone,
+    customer_address: address,
+    quantity: qty,
+    total_amount: amount,
+    payment_id: response.razorpay_payment_id,
+    order_id: order.id
+  };
+
+// 📩 CUSTOMER EMAIL
+emailjs.send(
+  "service_c74y3if",        // 🔁 YOUR SERVICE ID
+  "template_kv1chwl",     // 🔁 CUSTOMER TEMPLATE ID
+  orderData
+).then(
+  () => console.log("Customer email sent"),
+  (error) => console.error("Customer email failed", error)
+);
+
+// 📩 ADMIN EMAIL
+emailjs.send(
+  "service_c74y3if",        // 🔁 SAME SERVICE ID
+  "template_p5hbtqf",        // 🔁 ADMIN TEMPLATE ID
+  {
+    ...orderData,
+    admin_email: "attmianaturalproducts@gmail.com"
+  }
+).then(
+  () => console.log("Admin email sent"),
+  (error) => console.error("Admin email failed", error)
+);
+
+
+  // save order
+  localStorage.setItem("lastOrder", JSON.stringify({
+    orderId: order.id,
+    paymentId: response.razorpay_payment_id,
+    amount: amount,
+    date: new Date().toLocaleString()
+  }));
+
+  window.location.href = "orders.html";
+}
+
 
     // 🔥 SHOW LOADER
     loader.classList.remove("hidden");
@@ -261,6 +324,7 @@
 
 </body>
 </html>
+
 
 
 
