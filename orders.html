@@ -19,19 +19,16 @@
 </div>
 
 <script>
- const order = JSON.parse(localStorage.getItem("lastOrder"));
+  const order = JSON.parse(localStorage.getItem("lastOrder"));
 
-document.getElementById("orderId").innerText = order.order_id;
-document.getElementById("paymentId").innerText = order.payment_id;
-document.getElementById("amount").innerText = `₹${order.total_amount}`;
-document.getElementById("date").innerText = order.date;
-
-
-  if (order) {
+  if (!order) {
+    document.getElementById("orderDetails").innerHTML =
+      "<p class='text-red-500'>No order data found.</p>";
+  } else {
     document.getElementById("orderDetails").innerHTML = `
-      <p><b>Order ID:</b> ${order.orderId}</p>
-      <p><b>Payment ID:</b> ${order.paymentId}</p>
-      <p><b>Amount Paid:</b> ₹${order.amount}</p>
+      <p><b>Order ID:</b> ${order.order_id}</p>
+      <p><b>Payment ID:</b> ${order.payment_id}</p>
+      <p><b>Amount Paid:</b> ₹${order.total_amount}</p>
       <p><b>Date:</b> ${order.date}</p>
     `;
   }
@@ -39,4 +36,5 @@ document.getElementById("date").innerText = order.date;
 
 </body>
 </html>
+
 
