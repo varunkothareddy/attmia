@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script>
   (function () {
-    emailjs.init("YOUR_PUBLIC_KEY"); // 🔑 public key
+    emailjs.init("service_c74y3if"); // 🔑 public key
   })();
 </script>
 
@@ -119,7 +119,7 @@
     <div class="flex-1">
       <h2 class="text-xl font-bold">Natural Honey (1 Kg)</h2>
       <p class="text-gray-600">100% Pure & Natural</p>
-      <p class="text-lg font-semibold text-amber-600">₹450</p>
+      <p class="text-lg font-semibold text-amber-600">₹1</p>
     </div>
     <div class="flex items-center gap-3">
       <button onclick="changeQty(-1)" class="px-3 py-2 bg-gray-200 rounded">-</button>
@@ -172,8 +172,8 @@
 </div>
 
 <script>
-  const PRICE = 1.00;
-  const SHIPPING = 0.00;
+  const PRICE = 1;
+  const SHIPPING = 0;
   const BACKEND_URL = "https://phonepe-render-backend.onrender.com";
 
   const qtyEl = document.getElementById("qty");
@@ -226,65 +226,51 @@
       const order = await res.json();
 
       const options = {
-        key: "rzp_test_RsI7Pn3lJSY5zD",
-        amount: order.amount,
-        currency: "INR",
-        name: "ATTMIA NATURAL HONEY",
-        description: "Honey Purchase",
-        order_id: order.id,
+  key: "rzp_test_RsI7Pn3lJSY5zD",
+  amount: order.amount,
+  currency: "INR",
+  name: "ATTMIA NATURAL HONEY",
+  description: "Honey Purchase",
+  order_id: order.id,
 
-      handler: function (response) {
+  handler: function (response) {
+    loader.classList.add("hidden");
 
-  loader.classList.add("hidden");
+    const orderData = {
+      customer_name: name,
+      customer_email: email,
+      customer_phone: phone,
+      customer_address: address,
+      quantity: qty,
+      total_amount: amount,
+      payment_id: response.razorpay_payment_id,
+      order_id: order.id,
+      date: new Date().toLocaleString()
+    };
 
-  const orderData = {
-    customer_name: name,
-    customer_email: email,
-    customer_phone: phone,
-    customer_address: address,
-    quantity: qty,
-    total_amount: amount,
-    payment_id: response.razorpay_payment_id,
-    order_id: order.id,
-    date: new Date().toLocaleString()
-  };
+    // ✅ Save data
+    localStorage.setItem("lastOrder", JSON.stringify(orderData));
 
-  // ✅ SAVE COMPLETE DATA
-  localStorage.setItem("lastOrder", JSON.stringify(orderData));
+    // 📩 Customer Email
+    emailjs.send("service_c74y3if", "template_kv1chwl", orderData);
 
-  // 📩 CUSTOMER EMAIL
-  emailjs.send(
-    "service_c74y3if",
-    "template_kv1chwl",
-    orderData
-  ).then(
-    () => console.log("Customer email sent"),
-    (err) => console.error("Customer email error", err)
-  );
-
-  // 📩 ADMIN EMAIL
-  emailjs.send(
-    "service_c74y3if",
-    "template_p5hbtqf",
-    {
+    // 📩 Admin Email
+    emailjs.send("service_c74y3if", "template_p5hbtqf", {
       ...orderData,
       admin_email: "attmianaturalproducts@gmail.com"
+    });
+
+    window.location.href = "orders.html";
+  },
+
+  modal: {
+    ondismiss: function () {
+      loader.classList.add("hidden");
+      payBtn.disabled = false;
     }
-  ).then(
-    () => console.log("Admin email sent"),
-    (err) => console.error("Admin email error", err)
-  );
+  }
+};
 
-  window.location.href = "orders.html";
-}
-
-        modal: {
-          ondismiss: function () {
-            loader.classList.add("hidden");
-            payBtn.disabled = false;
-          }
-        }
-      };
 
       const rzp = new Razorpay(options);
       rzp.open();
@@ -302,6 +288,7 @@
 
 </body>
 </html>
+
 
 
 
