@@ -172,8 +172,8 @@
 </div>
 
 <script>
-  const PRICE = 0;
-  const SHIPPING = 1;
+  const PRICE = 450;
+  const SHIPPING = 100;
   const BACKEND_URL = "https://phonepe-render-backend.onrender.com";
 
   const qtyEl = document.getElementById("qty");
@@ -204,126 +204,99 @@
 
     const amount = recalc();
     payBtn.disabled = true;
-    handler: async function (response) {
 
-  loader.classList.add("hidden");
+    // 👉 GET FORM DATA FIRST
+    const form = document.getElementById("orderForm");
+    const name = form.querySelector('input[placeholder="Full Name"]').value;
+    const email = form.querySelector('input[type="email"]').value;
+    const phone = form.querySelector('input[type="tel"]').value;
+    const address = form.querySelector('textarea').value;
+    const qty = document.getElementById("qty").value;
 
-  const form = document.getElementById("orderForm");
-  const name = form.querySelector('input[placeholder="Full Name"]').value;
-  const email = form.querySelector('input[type="email"]').value;
-  const phone = form.querySelector('input[type="tel"]').value;
-  const address = form.querySelector('textarea').value;
-  const qty = document.getElementById("qty").value;
-
-  const orderData = {
-    customer_name: name,
-    customer_email: email,
-    customer_phone: phone,
-    customer_address: address,
-    quantity: qty,
-    total_amount: amount,
-    payment_id: response.razorpay_payment_id,
-    order_id: order.id
-  };
-
-// 📩 CUSTOMER EMAIL
-emailjs.send(
-  "service_c74y3if",        // 🔁 YOUR SERVICE ID
-  "template_kv1chwl",     // 🔁 CUSTOMER TEMPLATE ID
-  orderData
-).then(
-  () => console.log("Customer email sent"),
-  (error) => console.error("Customer email failed", error)
-);
-
-// 📩 ADMIN EMAIL
-emailjs.send(
-  "service_c74y3if",        // 🔁 SAME SERVICE ID
-  "template_p5hbtqf",        // 🔁 ADMIN TEMPLATE ID
-  {
-    ...orderData,
-    admin_email: "attmianaturalproducts@gmail.com"
-  }
-).then(
-  () => console.log("Admin email sent"),
-  (error) => console.error("Admin email failed", error)
-);
-
-
-  // save order
-  localStorage.setItem("lastOrder", JSON.stringify({
-    orderId: order.id,
-    paymentId: response.razorpay_payment_id,
-    amount: amount,
-    date: new Date().toLocaleString()
-  }));
-
-  window.location.href = "orders.html";
-}
-
-
-    // 🔥 SHOW LOADER
     loader.classList.remove("hidden");
     loader.classList.add("flex");
 
-    // ⏱️ WAIT 2 SECONDS
-    setTimeout(async () => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/create-order`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount })
-        });
+    try {
+      const res = await fetch(`${BACKEND_URL}/create-order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount })
+      });
 
-        const order = await res.json();
+      const order = await res.json();
 
-        const options = {
-          key: "rzp_live_RsapOybXmZ2EKQ", // live key later
-          amount: order.amount,
-          currency: "INR",
-          name: "ATTMIA NATURAL HONEY",
-          description: "Honey Purchase",
-          order_id: order.id,
+      const options = {
+        key: "rzp_live_RsapOybXmZ2EKQ",
+        amount: order.amount,
+        currency: "INR",
+        name: "ATTMIA NATURAL HONEY",
+        description: "Honey Purchase",
+        order_id: order.id,
 
-          handler: async function (response) {
-            loader.classList.add("hidden");
+        handler: function (response) {
+          loader.classList.add("hidden");
 
-            // save order locally
-            localStorage.setItem("lastOrder", JSON.stringify({
-              orderId: order.id,
-              paymentId: response.razorpay_payment_id,
-              amount: amount,
-              date: new Date().toLocaleString()
-            }));
+          const orderData = {
+            customer_name: name,
+            customer_email: email,
+            customer_phone: phone,
+            customer_address: address,
+            quantity: qty,
+            total_amount: amount,
+            payment_id: response.razorpay_payment_id,
+            order_id: order.id
+          };
 
-            window.location.href = "orders.html";
-          },
+          // 📩 CUSTOMER EMAIL
+          emailjs.send(
+            "service_c74y3if",
+            "template_kv1chwl",
+            orderData
+          );
 
-          modal: {
-            ondismiss: function () {
-              // ❌ Payment cancelled
-              loader.classList.add("hidden");
-              window.location.href = "shop.html";
+          // 📩 ADMIN EMAIL
+          emailjs.send(
+            "service_c74y3if",
+            "template_p5hbtqf",
+            {
+              ...orderData,
+              admin_email: "attmianaturalproducts@gmail.com"
             }
+          );
+
+          localStorage.setItem("lastOrder", JSON.stringify({
+            ...orderData,
+            date: new Date().toLocaleString()
+          }));
+
+          window.location.href = "orders.html";
+        },
+
+        modal: {
+          ondismiss: function () {
+            loader.classList.add("hidden");
+            payBtn.disabled = false;
           }
-        };
+        }
+      };
 
-        const rzp = new Razorpay(options);
-        rzp.open();
+      const rzp = new Razorpay(options);
+      rzp.open();
 
-      } catch (err) {
-        loader.classList.add("hidden");
-        alert("Payment failed. Please try again.");
-        window.location.href = "shop.html";
-      }
-    }, 2000);
+    } catch (err) {
+      loader.classList.add("hidden");
+      alert("Payment failed. Try again.");
+      payBtn.disabled = false;
+    }
   };
 
   recalc();
 </script>
 
+
 </body>
 </html>
+
 
 
 
