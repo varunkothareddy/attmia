@@ -233,44 +233,50 @@
         description: "Honey Purchase",
         order_id: order.id,
 
-        handler: function (response) {
-          loader.classList.add("hidden");
+      handler: function (response) {
 
-          const orderData = {
-            customer_name: name,
-            customer_email: email,
-            customer_phone: phone,
-            customer_address: address,
-            quantity: qty,
-            total_amount: amount,
-            payment_id: response.razorpay_payment_id,
-            order_id: order.id
-          };
+  loader.classList.add("hidden");
 
-          // 📩 CUSTOMER EMAIL
-          emailjs.send(
-            "service_c74y3if",
-            "template_kv1chwl",
-            orderData
-          );
+  const orderData = {
+    customer_name: name,
+    customer_email: email,
+    customer_phone: phone,
+    customer_address: address,
+    quantity: qty,
+    total_amount: amount,
+    payment_id: response.razorpay_payment_id,
+    order_id: order.id,
+    date: new Date().toLocaleString()
+  };
 
-          // 📩 ADMIN EMAIL
-          emailjs.send(
-            "service_c74y3if",
-            "template_p5hbtqf",
-            {
-              ...orderData,
-              admin_email: "attmianaturalproducts@gmail.com"
-            }
-          );
+  // ✅ SAVE COMPLETE DATA
+  localStorage.setItem("lastOrder", JSON.stringify(orderData));
 
-          localStorage.setItem("lastOrder", JSON.stringify({
-            ...orderData,
-            date: new Date().toLocaleString()
-          }));
+  // 📩 CUSTOMER EMAIL
+  emailjs.send(
+    "service_c74y3if",
+    "template_kv1chwl",
+    orderData
+  ).then(
+    () => console.log("Customer email sent"),
+    (err) => console.error("Customer email error", err)
+  );
 
-          window.location.href = "orders.html";
-        },
+  // 📩 ADMIN EMAIL
+  emailjs.send(
+    "service_c74y3if",
+    "template_p5hbtqf",
+    {
+      ...orderData,
+      admin_email: "attmianaturalproducts@gmail.com"
+    }
+  ).then(
+    () => console.log("Admin email sent"),
+    (err) => console.error("Admin email error", err)
+  );
+
+  window.location.href = "orders.html";
+}
 
         modal: {
           ondismiss: function () {
@@ -296,6 +302,7 @@
 
 </body>
 </html>
+
 
 
 
